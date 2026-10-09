@@ -1,0 +1,16 @@
+{
+  "name": "dezzie-crosses-the-road",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node tools/build-web.mjs",
+    "ios:sync": "npm run build && cap sync ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/ios": "^8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2"
+  }
+}

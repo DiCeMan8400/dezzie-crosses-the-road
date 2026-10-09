@@ -1,6 +1,7 @@
 # MakeCode
 built
 node_modules
+web
 yotta_modules
 yotta_targets
 pxt_modules

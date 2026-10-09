@@ -1,4 +1,4 @@
-sprites.onOverlap(SpriteKind.Player, SpriteKind.Enemy, function (sprite, otherSprite) {
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Enemy, function (playerSprite, vehicleSprite) {
     game.splash("Dezzie should have looked both ways")
     game.gameOver(false)
 })
@@ -124,7 +124,7 @@ scene.setBackgroundImage(img`
     bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
     bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
     `)
-let mySprite = sprites.create(img`
+let dezzie = sprites.create(img`
     . . . . . . . . . . . . . . . . 
     . . . . . . . . . . . . . . . . 
     . . . . . . . . . . . . . . . . 
@@ -142,11 +142,11 @@ let mySprite = sprites.create(img`
     . . . f . . . . . . f . . . . . 
     . . . . . . . . . . . . . . . . 
     `, SpriteKind.Player)
-mySprite.setBounceOnWall(true)
-mySprite.setPosition(74, 5)
-controller.moveSprite(mySprite)
+dezzie.setBounceOnWall(true)
+dezzie.setPosition(74, 5)
+controller.moveSprite(dezzie)
 music.play(music.stringPlayable("D G B D E G E C ", 200), music.PlaybackMode.LoopingInBackground)
-let myEnemy1 = sprites.create(img`
+let upperLeftboundCar = sprites.create(img`
     . . . . . . . . . . . . . . . . 
     . . . . . . 3 3 3 3 3 3 3 3 . . 
     . . . . . 3 c 3 3 3 3 3 3 d 3 . 
@@ -164,9 +164,9 @@ let myEnemy1 = sprites.create(img`
     . . . . f f f f . . . . f f f . 
     . . . . . . . . . . . . . . . . 
     `, SpriteKind.Enemy)
-myEnemy1.setPosition(133, 31)
-myEnemy1.setVelocity(-50, 0)
-let enymy_2 = sprites.create(img`
+upperLeftboundCar.setPosition(133, 31)
+upperLeftboundCar.setVelocity(-50, 0)
+let lowerLeftboundCar = sprites.create(img`
     . . . . . . . . . . . . . . . . 
     . . . . . . 6 6 6 6 6 6 6 6 . . 
     . . . . . 6 c 6 6 6 6 6 6 9 6 . 
@@ -184,9 +184,9 @@ let enymy_2 = sprites.create(img`
     . . . . f f f f . . . . f f f . 
     . . . . . . . . . . . . . . . . 
     `, SpriteKind.Enemy)
-enymy_2.setPosition(73, 51)
-enymy_2.setVelocity(-50, 0)
-let _3 = sprites.create(img`
+lowerLeftboundCar.setPosition(73, 51)
+lowerLeftboundCar.setVelocity(-50, 0)
+let upperRightboundCar = sprites.create(img`
     . . . . . . . . . . . . . . . . 
     . . . . 2 2 2 2 2 2 2 2 . . . . 
     . . . 2 4 2 2 2 2 2 2 c 2 . . . 
@@ -204,9 +204,9 @@ let _3 = sprites.create(img`
     . . . f f f . . . . f f f f . . 
     . . . . . . . . . . . . . . . . 
     `, SpriteKind.Enemy)
-_3.setPosition(19, 84)
-_3.setVelocity(50, 0)
-let my_enymy_4 = sprites.create(img`
+upperRightboundCar.setPosition(19, 84)
+upperRightboundCar.setVelocity(50, 0)
+let lowerRightboundCar = sprites.create(img`
     . . . . . . . . . . . . . . . . 
     . . . . 6 6 6 6 6 6 6 6 . . . . 
     . . . 6 9 6 6 6 6 6 6 c 6 . . . 
@@ -224,8 +224,8 @@ let my_enymy_4 = sprites.create(img`
     . . . f f f . . . . f f f f . . 
     . . . . . . . . . . . . . . . . 
     `, SpriteKind.Enemy)
-my_enymy_4.setPosition(121, 102)
-my_enymy_4.setVelocity(50, 0)
+lowerRightboundCar.setPosition(121, 102)
+lowerRightboundCar.setVelocity(50, 0)
 let carSpeed = 50
 let level = 1
 game.onUpdate(function () {
@@ -234,28 +234,28 @@ game.onUpdate(function () {
         game.setGameOverPlayable(true, music.melodyPlayable(music.buzzer), true)
         game.gameOver(true)
     }
-    if (mySprite.y > 110) {
+    if (dezzie.y > 110) {
         level += 1
         game.splash("Level: " + level)
         carSpeed = carSpeed * 1.05
-        mySprite.setPosition(74, 5)
-        myEnemy1.setVelocity(0 - carSpeed, 0)
-        enymy_2.setVelocity(0 - carSpeed, 0)
-        _3.setVelocity(carSpeed, 0)
-        my_enymy_4.setVelocity(carSpeed, 0)
+        dezzie.setPosition(74, 5)
+        upperLeftboundCar.setVelocity(0 - carSpeed, 0)
+        lowerLeftboundCar.setVelocity(0 - carSpeed, 0)
+        upperRightboundCar.setVelocity(carSpeed, 0)
+        lowerRightboundCar.setVelocity(carSpeed, 0)
     }
 })
 game.onUpdate(function () {
-    if (enymy_2.x < -10) {
-        enymy_2.x = 170
+    if (lowerLeftboundCar.x < -10) {
+        lowerLeftboundCar.x = 170
     }
-    if (myEnemy1.x < -10) {
-        myEnemy1.x = 170
+    if (upperLeftboundCar.x < -10) {
+        upperLeftboundCar.x = 170
     }
-    if (_3.x > 170) {
-        _3.x = -10
+    if (upperRightboundCar.x > 170) {
+        upperRightboundCar.x = -10
     }
-    if (my_enymy_4.x > 170) {
-        my_enymy_4.x = -10
+    if (lowerRightboundCar.x > 170) {
+        lowerRightboundCar.x = -10
     }
 })
