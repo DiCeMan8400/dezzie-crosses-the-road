@@ -1,0 +1,130 @@
+name: TestFlight
+
+# Builds the iPhone app and uploads it to TestFlight, for the team's internal testers.
+#
+# Mac minutes count ten times against the account's Actions quota, which other projects
+# share, so nothing here runs by itself: start it from the Actions tab, or push a tag
+#   git tag testflight-<anything> && git push origin testflight-<anything>
+# Everything that does not need a Mac happens first on Linux; the Mac only signs, archives
+# and uploads, and gives up after 20 minutes rather than idling.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['testflight-*']
+
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+jobs:
+  web:
+    name: Test, build, and copy the game into the Xcode project
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run ios:sync
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios
+          path: ios
+          retention-days: 1
+
+  app:
+    name: Sign, archive, and upload to TestFlight
+    needs: web
+    runs-on: macos-latest
+    timeout-minutes: 20
+    env:
+      APP_ID: com.dicentes.dezziecrossestheroad
+      PROFILE_NAME: Dezzie Crosses The Road App Store
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ios
+          path: ios
+
+      - name: Import the signing certificate and provisioning profile
+        env:
+          BUILD_CERT_BASE64: ${{ secrets.BUILD_CERT_BASE64 }}
+          BUILD_CERT_PASSWORD: ${{ secrets.BUILD_CERT_PASSWORD }}
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
+        run: |
+          set -euo pipefail
+          CERT_PATH="$RUNNER_TEMP/cert.p12"
+          PROFILE_PATH="$RUNNER_TEMP/profile.mobileprovision"
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+
+          echo -n "$BUILD_CERT_BASE64" | base64 --decode -o "$CERT_PATH"
+          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o "$PROFILE_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$BUILD_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed 's/"//g')
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          UUID=$(security cms -D -i "$PROFILE_PATH" | plutil -extract UUID xml1 -o - - | sed -n 's/.*<string>\(.*\)<\/string>.*/\1/p')
+          cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
+
+      - name: Archive
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          # The build number is this workflow's run number, so every upload is newer than
+          # the last. Signing comes from the project's Release settings.
+          xcodebuild archive \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/DezzieCrossesTheRoad.xcarchive" \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            -quiet
+
+      - name: Upload to TestFlight
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          KEY_PATH="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"
+          echo -n "$ASC_API_KEY_BASE64" | base64 --decode -o "$KEY_PATH"
+
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key><string>app-store-connect</string>
+              <key>destination</key><string>upload</string>
+              <key>signingStyle</key><string>manual</string>
+              <key>teamID</key><string>$TEAM_ID</string>
+              <key>provisioningProfiles</key>
+              <dict><key>$APP_ID</key><string>$PROFILE_NAME</string></dict>
+              <key>manageAppVersionAndBuildNumber</key><false/>
+              <key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          PLIST
+
+          # Exporting with destination "upload" sends the build straight to App Store
+          # Connect, signed in with the API key.
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/DezzieCrossesTheRoad.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
