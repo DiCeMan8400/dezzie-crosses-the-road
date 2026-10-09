@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "node tools/build-web.mjs",
+    "test": "node --check tools/build-web.mjs",
     "ios:sync": "npm run build && cap sync ios"
   },
   "dependencies": {
