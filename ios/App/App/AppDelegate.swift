@@ -1,4 +1,5 @@
 import UIKit
+import AVFAudio
 import Capacitor
 
 @UIApplicationMain
