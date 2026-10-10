@@ -1,6 +1,6 @@
 {
-  "appId": "com.dicentes.dezziecrossestheroad",
-  "appName": "Dezzie Crosses The Road",
+  "appId": "com.dicentes.dezziecrossestheroad.emmi",
+  "appName": "Dezzie: Emmi Edition",
   "webDir": "web",
   "ios": {
     "contentInset": "never",

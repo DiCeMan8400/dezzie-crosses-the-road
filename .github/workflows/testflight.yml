@@ -1,4 +1,4 @@
-name: TestFlight
+name: TestFlight - Emmi Edition
 
 # Builds the iPhone app and uploads it to TestFlight, for the team's internal testers.
 #
@@ -29,6 +29,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - run: |
+          npm install -g pxt
+          pxt target arcade
+          pxt install
+          pxt build --cloud
+          cp built/debug/binary.js assets/js/binary.js
       - run: npm run ios:sync
       - uses: actions/upload-artifact@v4
         with:
@@ -42,8 +48,8 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 20
     env:
-      APP_ID: com.dicentes.dezziecrossestheroad
-      PROFILE_NAME: Dezzie Crosses The Road App Store
+      APP_ID: com.dicentes.dezziecrossestheroad.emmi
+      PROFILE_NAME: Dezzie Emmi Edition App Store
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -54,7 +60,7 @@ jobs:
         env:
           BUILD_CERT_BASE64: ${{ secrets.BUILD_CERT_BASE64 }}
           BUILD_CERT_PASSWORD: ${{ secrets.BUILD_CERT_PASSWORD }}
-          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.EMMI_BUILD_PROVISION_PROFILE_BASE64 }}
         run: |
           set -euo pipefail
           CERT_PATH="$RUNNER_TEMP/cert.p12"

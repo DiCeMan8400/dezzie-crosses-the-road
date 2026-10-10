@@ -228,6 +228,23 @@ lowerRightboundCar.setPosition(121, 102)
 lowerRightboundCar.setVelocity(50, 0)
 let carSpeed = 50
 let level = 1
+
+function showEmmiSplash(currentLevel: number) {
+    if (currentLevel == 10) {
+        game.splash("OMG EMMI. U made it gurlyp0p")
+    } else if (currentLevel == 25) {
+        game.splash("Ok, but there are 100 levels Emmi")
+    } else if (currentLevel == 50) {
+        game.splash("Brotha, I'm lowkey shokd")
+    } else if (currentLevel == 67) {
+        game.splash(" sIxSeVeN")
+    } else if (currentLevel == 99) {
+        game.splash("I can't beleive u akshuly made it. #Nerdsquad")
+    }
+}
+
+game.splash("Good luck, IRMA")
+
 game.onUpdate(function () {
     if (level == 100) {
         game.splash("Thats why Dezzie crossed the roan")
@@ -237,6 +254,7 @@ game.onUpdate(function () {
     if (dezzie.y > 110) {
         level += 1
         game.splash("Level: " + level)
+        showEmmiSplash(level)
         carSpeed = carSpeed * 1.05
         dezzie.setPosition(74, 5)
         upperLeftboundCar.setVelocity(0 - carSpeed, 0)
